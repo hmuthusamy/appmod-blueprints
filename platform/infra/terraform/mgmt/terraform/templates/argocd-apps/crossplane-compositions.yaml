@@ -10,8 +10,8 @@ metadata:
 spec:
   project: modern-engg
   source:
-    repoURL: ${GITHUB_URL}
-    targetRevision: HEAD
+    repoURL: https://github.com/hmuthusamy/appmod-blueprints.git
+    targetRevision: feature/cross-plane-prov-comp-fix
     path: packages/crossplane-compositions/dev/
   destination:
     server: "https://kubernetes.default.svc"
