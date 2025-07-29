@@ -1,0 +1,25 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-gitlab-path
+  namespace: gitlab
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
+    nginx.ingress.kubernetes.io/proxy-body-size: 512m
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: ${GITLAB_DOMAIN_NAME}
+      http:
+        paths:
+          - path: /gitlab(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: my-gitlab-webservice-default
+                port:
+                  number: 8080

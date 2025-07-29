@@ -1,0 +1,3 @@
+# ignore Local yaml and back files
+*.yaml
+*.*.bak

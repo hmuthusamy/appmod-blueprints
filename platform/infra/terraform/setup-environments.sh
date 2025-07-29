@@ -125,7 +125,6 @@ terraform -chdir=bootstrap plan
 terraform -chdir=bootstrap apply -auto-approve
 
 export TF_VAR_state_s3_bucket=$(terraform -chdir=bootstrap output -raw eks-accelerator-bootstrap-state-bucket)
-export TF_VAR_state_ddb_lock_table=$(terraform -chdir=bootstrap output -raw eks-accelerator-bootstrap-ddb-lock-table)
 export TF_VAR_managed_prometheus_workspace_id=$(terraform -chdir=bootstrap output -raw amp_workspace_id)
 export TF_VAR_managed_grafana_workspace_id=$(terraform -chdir=bootstrap output -raw amg_workspace_id)
 export TF_VAR_grafana_workspace_endpoint=$(terraform -chdir=bootstrap output -raw grafana_workspace_endpoint)
@@ -148,7 +147,6 @@ cd "${REPO_ROOT}/platform/infra/terraform/"
 # Bootstrap EKS Cluster using S3 bucket and DynamoDB
 echo "Following bucket and dynamodb table will be used to store states for dev and PROD Cluster:"
 echo "S3_BUCKET = "$TF_VAR_state_s3_bucket
-echo "DYNAMO_DB_lOCK_TABLE = "$TF_VAR_state_ddb_lock_table
 
 # Create API key for Managed Grafana and export the key.
 export AMG_API_KEY=$(aws grafana create-workspace-api-key \
@@ -169,7 +167,7 @@ echo "Managed Prometheus Workspace ID = "$TF_VAR_managed_prometheus_workspace_id
 terraform -chdir=dev/db init -reconfigure -backend-config="key=dev/db/db-ec2-cluster.tfstate" \
   -backend-config="bucket=$TF_VAR_state_s3_bucket" \
   -backend-config="region=$TF_VAR_aws_region" \
-  -backend-config="dynamodb_table=$TF_VAR_state_ddb_lock_table"
+  -backend-config="use_lockfile=true"
 
 # Apply the infrastructure changes to deploy DB DEV cluster
 terraform -chdir=dev/db plan -var aws_region="${TF_VAR_aws_region}" \
@@ -187,7 +185,7 @@ export DEV_DB_PROCESS=$!
 terraform -chdir=dev init -reconfigure -backend-config="key=dev/eks-accelerator-vpc.tfstate" \
   -backend-config="bucket=$TF_VAR_state_s3_bucket" \
   -backend-config="region=$TF_VAR_aws_region" \
-  -backend-config="dynamodb_table=$TF_VAR_state_ddb_lock_table"
+  -backend-config="use_lockfile=true"
 
 # Apply the infrastructure changes to deploy EKS DEV cluster and install EKS observability Accelerator
 terraform -chdir=dev plan -var aws_region="${TF_VAR_aws_region}" \
@@ -207,7 +205,7 @@ export DEV_EKS_PROCESS=$!
 terraform -chdir=prod init -reconfigure -backend-config="key=prod/eks-accelerator-vpc.tfstate" \
   -backend-config="bucket=$TF_VAR_state_s3_bucket" \
   -backend-config="region=$TF_VAR_aws_region" \
-  -backend-config="dynamodb_table=$TF_VAR_state_ddb_lock_table"
+  -backend-config="use_lockfile=true"
 
 # Apply the infrastructure changes to deploy EKS PROD cluster and deploy observability accelerator
 terraform -chdir=prod plan -var aws_region="${TF_VAR_aws_region}" \
@@ -280,7 +278,7 @@ sed -e "s#PROD_ARGOROLL_ROLE_ARN#${PROD_ARGOROLL_ROLE_ARN}#g" ${REPO_ROOT}/platf
 terraform -chdir=post-deploy init -reconfigure -backend-config="key=post/argocd-connect-vpc.tfstate" \
   -backend-config="bucket=$TF_VAR_state_s3_bucket" \
   -backend-config="region=$TF_VAR_aws_region" \
-  -backend-config="dynamodb_table=$TF_VAR_state_ddb_lock_table"
+  -backend-config="use_lockfile=true"
 
 export TF_VAR_GITEA_URL="https://${DNS_HOSTNAME}/gitea"
 

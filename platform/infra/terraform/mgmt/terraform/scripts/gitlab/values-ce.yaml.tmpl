@@ -1,0 +1,142 @@
+global:
+  edition: ce
+  hosts:
+    domain: DOMAIN_NAME
+    https: false
+  ingress:
+    enabled: false
+
+gitlab:
+  webservice:
+    image:
+      repository: gitlab/gitlab-ce
+      tag: latest
+    resources:
+      requests:
+        memory: "4Gi"
+        cpu: "2"
+      limits:
+        memory: "4Gi"
+        cpu: "2"
+    securityContext:
+      runAsUser: 0
+      privileged: false
+    livenessProbe:
+      httpGet:
+        path: /-/liveness
+        port: 80
+      initialDelaySeconds: 180
+      timeoutSeconds: 15
+      periodSeconds: 30
+    readinessProbe:
+      httpGet:
+        path: /-/readiness
+        port: 80
+      initialDelaySeconds: 180
+      timeoutSeconds: 15
+      periodSeconds: 30
+    extraEnv:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://DOMAIN_NAME'
+        gitlab_rails['gitlab_shell_ssh_port'] = 22
+        gitlab_rails['gitlab_shell_git_timeout'] = 800
+        gitlab_rails['enabled_git_access_protocol'] = 'ssh'
+        
+        # Disable Let's Encrypt
+        letsencrypt['enable'] = false
+        
+        # Disable HTTPS
+        nginx['ssl_certificate'] = nil
+        nginx['ssl_certificate_key'] = nil
+        nginx['redirect_http_to_https'] = false
+        nginx['listen_https'] = false
+        
+        # Disable Prometheus monitoring
+        prometheus_monitoring['enable'] = false
+        
+        # Disable container registry
+        registry['enable'] = false
+        registry_nginx['enable'] = false
+        
+        # Disable pages
+        pages_enabled = false
+        gitlab_pages['enable'] = false
+        
+        # Disable monitoring features
+        alertmanager['enable'] = false
+        node_exporter['enable'] = false
+        redis_exporter['enable'] = false
+        postgres_exporter['enable'] = false
+        
+        # Disable Mattermost
+        mattermost['enable'] = false
+        mattermost_nginx['enable'] = false
+        
+        # Disable SMTP
+        gitlab_rails['smtp_enable'] = false
+        
+        # Disable Sidekiq metrics
+        sidekiq['metrics_enabled'] = false
+        
+        # Puma configuration
+        puma['worker_processes'] = 0
+        puma['per_worker_max_memory_mb'] = 1024
+        
+        # Redis configuration
+        redis['tcp_timeout'] = 60
+        redis['tcp_keepalive'] = 300
+        
+        # Reduce Sidekiq concurrency
+        sidekiq['concurrency'] = 5
+        gitlab_rails['monitoring_whitelist'] = ['0.0.0.0/0']
+        gitlab_rails['signup_enabled'] = false
+
+persistence:
+  enabled: true
+  size: 50Gi
+  storageClass: gp3
+  accessMode: ReadWriteOnce
+
+service:
+  type: LoadBalancer
+  loadBalancerClass: eks.amazonaws.com/nlb
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-name: "gitlab"
+    service.beta.kubernetes.io/aws-load-balancer-type: "external"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+    service.beta.kubernetes.io/aws-load-balancer-manage-backend-security-group-rules: "true"
+  http:
+    port: 80
+    targetPort: 80
+  ssh:
+    port: 22
+    targetPort: 22
+
+# Disable components not needed
+postgresql:
+  install: false
+
+redis:
+  install: false
+
+nginx-ingress:
+  enabled: false
+
+certmanager:
+  install: false
+
+prometheus:
+  install: false
+
+gitlab-runner:
+  install: false
+
+registry:
+  enabled: false
+
+gitlab-kas:
+  enabled: false
+
+gitlab-pages:
+  enabled: false

@@ -4,7 +4,7 @@
 terraform -chdir=dev/db init -reconfigure -backend-config="key=dev/db/db-ec2-cluster.tfstate" \
   -backend-config="bucket=$TF_VAR_state_s3_bucket" \
   -backend-config="region=$TF_VAR_aws_region" \
-  -backend-config="dynamodb_table=$TF_VAR_state_ddb_lock_table"
+  -backend-config="use_lockfile=true"
 
 # Apply the infrastructure changes to deploy DB DEV cluster 
 terraform -chdir=dev/db apply -var aws_region="${TF_VAR_aws_region}" \

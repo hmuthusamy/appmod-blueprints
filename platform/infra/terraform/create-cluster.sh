@@ -7,7 +7,7 @@ git clone https://github.com/aws-observability/terraform-aws-observability-accel
 terraform -chdir=dev init -reconfigure -backend-config="key=dev/eks-accelerator-vpc.tfstate" \
   -backend-config="bucket=$TF_VAR_state_s3_bucket" \
   -backend-config="region=$TF_VAR_aws_region" \
-  -backend-config="dynamodb_table=$TF_VAR_state_ddb_lock_table"
+  -backend-config="use_lockfile=true"
 
 # Apply the infrastructure changes to deploy EKS DEV cluster and install EKS observability Accelerator
 terraform -chdir=dev apply -var aws_region="${TF_VAR_aws_region}" \
@@ -22,7 +22,7 @@ aws eks update-kubeconfig --region $TF_VAR_aws_region --name $TF_VAR_prod_cluste
 terraform -chdir=prod init -reconfigure -backend-config="key=prod/eks-accelerator-vpc.tfstate" \
   -backend-config="bucket=$TF_VAR_state_s3_bucket" \
   -backend-config="region=$TF_VAR_aws_region" \
-  -backend-config="dynamodb_table=$TF_VAR_state_ddb_lock_table"
+  -backend-config="use_lockfile=true"
 
 # Apply the infrastructure changes to deploy EKS PROD cluster and deploy observability accelerator
 terraform -chdir=prod apply -var aws_region="${TF_VAR_aws_region}" \

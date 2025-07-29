@@ -1,0 +1,91 @@
+global:
+  edition: ce
+  hosts:
+    domain: DOMAIN_NAME
+    https: false
+  ingress:
+    enabled: false
+  gitaly:
+    enabled: true
+  appConfig:
+    enableUsagePing: false
+    relativeUrlRoot: /gitlab
+  gitlab:
+   name:  DOMAIN_NAME/gitlab
+  registry:
+      name: DOMAIN_NAME/gitlab
+      https: false 
+  
+gitlab:
+  webservice:
+    enabled: true
+    replicaCount: 1
+    ingress:
+      enabled: false
+    service:
+      type: ClusterIP
+      port: 8080
+    loadBalancer:
+      enabled: false
+    extraEnv:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://DOMAIN_NAME/gitlab'
+        gitlab_rails['relative_url_root'] = '/gitlab'
+        gitlab_workhorse['relative_url_root'] = '/gitlab'
+        gitlab_kas['relative_url_root'] = '/gitlab'
+        gitlab_pages['relative_url_root'] = '/gitlab'
+        registry['relative_url_root'] = '/gitlab'
+        mattermost['relative_url_root'] = '/gitlab'
+        nginx['listen_port'] = 8080
+        nginx['listen_https'] = false
+        nginx['proxy_set_headers'] = {
+          'X-Forwarded-Proto' => 'http',
+          'X-Forwarded-Ssl' => 'off'
+        }
+        gitlab_rails['trusted_proxies'] = ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16']
+        gitlab_rails['omniauth_block_auto_created_users'] = false
+        gitlab_rails['omniauth_auto_sign_in_with_provider'] = nil
+  
+  sidekiq:
+    enabled: true
+    replicaCount: 1
+  
+  gitaly:
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: gp3
+  
+  gitlab-shell:
+    enabled: true
+    service:
+      type: ClusterIP
+
+postgresql:
+  install: true
+  persistence:
+    enabled: true
+    size: 8Gi
+    storageClass: gp3
+
+redis:
+  install: true
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: gp3
+
+nginx-ingress:
+  enabled: false
+
+certmanager:
+  install: false
+
+certmanager-issuer:
+  email: admin@example.com
+
+prometheus:
+  install: false
+
+gitlab-runner:
+  install: false

@@ -48,7 +48,6 @@ echo "bootstrapping Terraform"
 terraform -chdir=bootstrap init -reconfigure
 
 export TF_VAR_state_s3_bucket=$(terraform -chdir=bootstrap  output -raw eks-accelerator-bootstrap-state-bucket)
-export TF_VAR_state_ddb_lock_table=$(terraform -chdir=bootstrap output -raw eks-accelerator-bootstrap-ddb-lock-table)
 export TF_VAR_managed_grafana_workspace_id=$(terraform -chdir=bootstrap output -raw amg_workspace_id)
 export TF_VAR_managed_prometheus_workspace_id=$(terraform -chdir=bootstrap output -raw amp_workspace_id)
 
@@ -86,7 +85,7 @@ cd ${REPO_ROOT}/platform/infra/terraform/
 terraform -chdir=post-deploy init -reconfigure -backend-config="key=post/argocd-connect-vpc.tfstate" \
 -backend-config="bucket=$TF_VAR_state_s3_bucket" \
 -backend-config="region=$TF_VAR_aws_region" \
--backend-config="dynamodb_table=$TF_VAR_state_ddb_lock_table"
+-backend-config="use_lockfile=true"
 
 # Apply the infrastructure changes to deploy EKS DEV cluster and install EKS observability Accelerator
 terraform -chdir=post-deploy destroy -var aws_region="${TF_VAR_aws_region}" -auto-approve
@@ -97,7 +96,7 @@ cd ${REPO_ROOT}/platform/infra/terraform/
 terraform -chdir=dev/db init -reconfigure -backend-config="key=dev/db/db-ec2-cluster.tfstate" \
   -backend-config="bucket=$TF_VAR_state_s3_bucket" \
   -backend-config="region=$TF_VAR_aws_region" \
-  -backend-config="dynamodb_table=$TF_VAR_state_ddb_lock_table"
+  -backend-config="use_lockfile=true"
 
 # Destroy the infrastructure changes to deploy DB DEV cluster
 terraform -chdir=dev/db plan -destroy -var aws_region="${TF_VAR_aws_region}" \
@@ -113,7 +112,7 @@ terraform -chdir=dev/db apply "devdbdestroyplan"
 terraform -chdir=dev init -reconfigure -backend-config="key=dev/eks-accelerator-vpc.tfstate" \
 -backend-config="bucket=$TF_VAR_state_s3_bucket" \
 -backend-config="region=$TF_VAR_aws_region" \
--backend-config="dynamodb_table=$TF_VAR_state_ddb_lock_table"
+-backend-config="use_lockfile=true"
 
 aws eks --region $TF_VAR_aws_region update-kubeconfig --name $TF_VAR_dev_cluster_name
 
@@ -132,7 +131,7 @@ terraform -chdir=dev apply "devdestroyplan"
 terraform -chdir=prod init -reconfigure -backend-config="key=prod/eks-accelerator-vpc.tfstate" \
 -backend-config="bucket=$TF_VAR_state_s3_bucket" \
 -backend-config="region=$TF_VAR_aws_region" \
--backend-config="dynamodb_table=$TF_VAR_state_ddb_lock_table"
+-backend-config="use_lockfile=true"
 
 aws eks --region $TF_VAR_aws_region update-kubeconfig --name $TF_VAR_prod_cluster_name
 
